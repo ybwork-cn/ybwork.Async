@@ -1,0 +1,11 @@
+.svn/
+.editorconfig
+Library/
+Logs/
+Temp/
+*.csproj
+*.sln
+UserSettings/
+.vs/
+.vsconfig
+obj/
