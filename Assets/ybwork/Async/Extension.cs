@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
+
+using UnityEngine;
 using ybwork.Async.Awaiters;
 
 namespace ybwork.Async
