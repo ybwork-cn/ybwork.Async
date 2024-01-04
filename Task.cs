@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
+
+using System;
 using System.Collections;
 using System.Runtime.CompilerServices;
 using ybwork.Async.Awaiters;

@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
+
+using System;
 using System.Runtime.CompilerServices;
 
 namespace ybwork.Async

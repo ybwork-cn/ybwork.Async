@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
+
+using System.Collections.Generic;
 using UnityEngine;
 using ybwork.Async.Awaiters;
 
