@@ -20,7 +20,10 @@ namespace ybwork.Async.Awaiters
         public abstract bool MoveNext();
         public abstract void GetResult();
         public abstract void SetValue(object result);
-        public abstract void SetException(Exception ex);
+        public void SetException()
+        {
+            IsCompleted = true;
+        }
 
         public void OnCompleted(Action continuation)
         {
@@ -39,7 +42,6 @@ namespace ybwork.Async.Awaiters
     {
         protected readonly IEnumerator Action;
         protected object Result { get; set; } = default;
-        protected Exception Exception { get; set; }
         public override void GetResult()
         {
             if (IsCompleted)
@@ -63,8 +65,6 @@ namespace ybwork.Async.Awaiters
 
         public override bool MoveNext()
         {
-            if (Exception != null)
-                throw Exception;
             if (IsCompleted)
             {
                 IsCompleted = true;
@@ -96,13 +96,6 @@ namespace ybwork.Async.Awaiters
         {
             Result = result;
             IsCompleted = true;
-            MoveNext();
-        }
-
-        public override void SetException(Exception ex)
-        {
-            IsCompleted = true;
-            Exception = ex;
             MoveNext();
         }
     }
@@ -137,10 +130,6 @@ namespace ybwork.Async.Awaiters
                 while (MoveNext()) ;
                 return;
             }
-        }
-
-        public override void SetException(Exception ex)
-        {
         }
 
         public override void SetValue(object result)

@@ -16,7 +16,11 @@ namespace ybwork.Async
 
         public void SetResult(object result) => _response.SetValue(result);
         public void SetResult() => _response.SetValue(null);
-        public void SetException(Exception ex) => _response.SetException(ex);
+        public void SetException(Exception ex)
+        {
+            _response.SetException();
+            throw ex;
+        }
 
         public void SetStateMachine(IAsyncStateMachine _) { }
 
@@ -45,7 +49,11 @@ namespace ybwork.Async
         public TaskMethodBuilder() { _response = new YueTask<T>(); }
 
         public void SetResult(T result) => _response.SetValue(result);
-        public void SetException(Exception ex) => _response.SetException(ex);
+        public void SetException(Exception ex)
+        {
+            _response.SetException();
+            throw ex;
+        }
 
         public void SetStateMachine(IAsyncStateMachine _) { }
 
