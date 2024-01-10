@@ -32,9 +32,9 @@ namespace ybwork.Async
             TaskAwaiter.SetValue(result);
         }
 
-        public void SetException(Exception ex)
+        public void SetException()
         {
-            TaskAwaiter.SetException(ex);
+            TaskAwaiter.SetException();
         }
 
         public void Then(Action action)
