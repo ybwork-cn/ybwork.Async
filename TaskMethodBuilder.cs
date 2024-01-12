@@ -2,6 +2,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 
 namespace ybwork.Async
 {
@@ -19,7 +20,7 @@ namespace ybwork.Async
         public void SetException(Exception ex)
         {
             _response.SetException();
-            throw ex;
+            Debug.LogException(ex);
         }
 
         public void SetStateMachine(IAsyncStateMachine _) { }
@@ -52,7 +53,7 @@ namespace ybwork.Async
         public void SetException(Exception ex)
         {
             _response.SetException();
-            throw ex;
+            Debug.LogException(ex);
         }
 
         public void SetStateMachine(IAsyncStateMachine _) { }
