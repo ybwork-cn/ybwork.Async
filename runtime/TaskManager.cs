@@ -8,16 +8,21 @@ namespace ybwork.Async
 {
     class TaskManager : MonoBehaviour
     {
-        public static TaskManager Instance { get; private set; }
+        private static TaskManager instance;
+        public static TaskManager Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new GameObject(nameof(TaskManager)).AddComponent<TaskManager>();
+                    DontDestroyOnLoad(instance);
+                }
+                return instance;
+            }
+        }
         public int Count;
         private readonly List<AwaiterBase> TaskAwaiters = new();
-
-        [RuntimeInitializeOnLoadMethod]
-        static void Init()
-        {
-            Instance = new GameObject(nameof(TaskManager)).AddComponent<TaskManager>();
-            DontDestroyOnLoad(Instance);
-        }
 
         public void AddTaskAwaiter(AwaiterBase taskAwaiter)
         {
