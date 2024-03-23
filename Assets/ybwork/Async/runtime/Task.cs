@@ -59,12 +59,20 @@ namespace ybwork.Async
             return result;
         }
 
-        public static async YueTask WaitAll(params YueTask[] tasks)
+        public static YueTask WaitAll(params YueTask[] tasks)
         {
+            YueTask result = new YueTask();
+            int count = tasks.Length;
             foreach (var task in tasks)
             {
-                await task;
+                task.Then(() =>
+                {
+                    count--;
+                    if (count == 0)
+                        result.SetValue(null);
+                });
             }
+            return result;
         }
 
         public static YueTask Delay(float seconds) => new YueTask(new DeleyAwaiter(seconds));

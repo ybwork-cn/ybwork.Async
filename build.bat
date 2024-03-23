@@ -8,6 +8,4 @@ git remote rm %ToolName%
 ::此命令会创建一个ToolName的分支，并同步ToolAssetPath下的内容
 git subtree split -P %ToolAssetPath% --branch %ToolName%
 
-:: 推送到远端
-git push origin %ToolName%
 pause
