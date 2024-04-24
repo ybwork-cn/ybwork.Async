@@ -13,10 +13,12 @@ public class MyTaskTest : MonoBehaviour
 
     private async void Test()
     {
+        await YueTask.WaitUntil(() => Time.time > 5);
+
         YueTask task1 = YueTask.Delay(3);
         task1.Then(() =>
         {
-            Log("Task1");
+            Log(8);
         });
 
         YueTask<int> task2 = Test1();

@@ -1,7 +1,6 @@
 ﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
 
 using System;
-using System.Collections;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -17,9 +16,30 @@ namespace ybwork.Async.Awaiters
             TaskManager.Instance.AddTaskAwaiter(this);
         }
 
-        public abstract bool MoveNext();
-        public abstract void GetResult();
-        public abstract void SetValue(object result);
+        public virtual bool MoveNext()
+        {
+            if (IsCompleted)
+            {
+                Continuation?.Invoke();
+                Continuation = null;
+                return false;
+            }
+            return true;
+        }
+
+        public void GetResult() { }
+
+        public virtual void SetValue(object result)
+        {
+            Complete();
+        }
+
+        protected void Complete()
+        {
+            IsCompleted = true;
+            MoveNext();
+        }
+
         public void SetException()
         {
             IsCompleted = true;
@@ -38,65 +58,33 @@ namespace ybwork.Async.Awaiters
         }
     }
 
-    public class Awaiter : AwaiterBase
+    internal class WaitUntilAwater : AwaiterBase
     {
-        protected readonly IEnumerator Action;
-        protected object Result { get; set; } = default;
-        public override void GetResult()
-        {
-            if (IsCompleted)
-                return;
-            else
-            {
-                while (Action.MoveNext()) ;
-                return;
-            }
-        }
+        private readonly Func<bool> _predicate;
 
-        internal Awaiter() : base()
+        internal WaitUntilAwater(Func<bool> predicate) : base()
         {
-            Action = LoopAciton();
-        }
-
-        internal Awaiter(IEnumerator enumerator) : base()
-        {
-            Action = enumerator;
+            _predicate = predicate;
+            if (_predicate == null)
+                throw new NullReferenceException("predicate参数未绑定任何方法");
         }
 
         public override bool MoveNext()
         {
             if (IsCompleted)
-            {
-                IsCompleted = true;
-                Continuation?.Invoke();
-                Continuation = null;
                 return false;
-            }
-            if (Action.MoveNext())
+
+            if (!_predicate.Invoke())
             {
                 return true;
             }
             else
             {
                 IsCompleted = true;
-                Result = Action.Current;
                 Continuation?.Invoke();
                 Continuation = null;
                 return false;
             }
-        }
-
-        private IEnumerator LoopAciton()
-        {
-            while (!IsCompleted)
-                yield return null;
-        }
-
-        public override void SetValue(object result)
-        {
-            Result = result;
-            IsCompleted = true;
-            MoveNext();
         }
     }
 
@@ -111,57 +99,76 @@ namespace ybwork.Async.Awaiters
 
         public override bool MoveNext()
         {
-            IsCompleted = endtime < Time.time;
-            if (IsCompleted)
-            {
-                Continuation?.Invoke();
-                Continuation = null;
-                return false;
-            }
-            return true;
+            IsCompleted = endtime <= Time.time;
+            return base.MoveNext();
+        }
+    }
+
+    internal class DeleyFramesAwaiter : AwaiterBase
+    {
+        private readonly float _frameCount;
+        private int _currentFrame = 0;
+
+        internal DeleyFramesAwaiter(int frameCount) : base()
+        {
+            _frameCount = frameCount;
         }
 
-        public override void GetResult()
+        public override bool MoveNext()
         {
-            if (IsCompleted)
-                return;
-            else
-            {
-                while (MoveNext()) ;
-                return;
-            }
+            IsCompleted = _currentFrame >= _frameCount;
+            _currentFrame++;
+            return base.MoveNext();
+        }
+    }
+
+    internal class YieldAwaiter : AwaiterBase
+    {
+        private bool _isDone;
+        internal YieldAwaiter() : base() { }
+
+        public override bool MoveNext()
+        {
+            IsCompleted = _isDone;
+            _isDone = true;
+            return base.MoveNext();
+        }
+    }
+
+    public class Awaiter : AwaiterBase
+    {
+        public object Result { get; private set; }
+
+        public new object GetResult()
+        {
+            return Result;
         }
 
         public override void SetValue(object result)
         {
+            Result = result;
+            Complete();
         }
     }
 
-    public class Awaiter<T> : Awaiter
+    public class Awaiter<T> : AwaiterBase
     {
-        public Awaiter() : base() { }
+        public T Result { get; private set; }
 
         public new T GetResult()
         {
-            object result;
-            if (IsCompleted)
-                result = Result;
-            else
-            {
-                while (Action.MoveNext()) ;
-                result = Action.Current;
-            }
-
-            if (result is T t)
-                return t;
-            else return default;
+            return Result;
         }
 
         public void SetValue(T result)
         {
             Result = result;
-            IsCompleted = true;
-            MoveNext();
+            Complete();
+        }
+
+        public override void SetValue(object result)
+        {
+            SetValue((T)result);
         }
     }
 }

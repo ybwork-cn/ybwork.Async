@@ -1,7 +1,6 @@
 ﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
 
 using System;
-using System.Collections;
 using System.Runtime.CompilerServices;
 using ybwork.Async.Awaiters;
 
@@ -76,23 +75,9 @@ namespace ybwork.Async
         }
 
         public static YueTask Delay(float seconds) => new YueTask(new DeleyAwaiter(seconds));
-        public static YueTask DelayFrame(int frameCount) => new YueTask(new Awaiter(DelayFrameFunc(frameCount)));
-        public static YueTask Yield() => new YueTask(new Awaiter(YieldFnuc()));
-        public static YueTask WaitUntil(Func<bool> predicate) => new YueTask(new Awaiter(WaitUntilFunc(predicate)));
-        private static IEnumerator DelayFrameFunc(int frameCount)
-        {
-            while (frameCount > 0)
-            {
-                yield return frameCount;
-                frameCount--;
-            }
-        }
-        private static IEnumerator WaitUntilFunc(Func<bool> predicate)
-        {
-            while (!predicate.Invoke())
-                yield return 0;
-        }
-        private static IEnumerator YieldFnuc() { yield return 0; }
+        public static YueTask DelayFrames(int frameCount) => new YueTask(new DeleyFramesAwaiter(frameCount));
+        public static YueTask Yield() => new YueTask(new YieldAwaiter());
+        public static YueTask WaitUntil(Func<bool> predicate) => new YueTask(new WaitUntilAwater(predicate));
     }
 
     [AsyncMethodBuilder(typeof(TaskMethodBuilder<>))]  //允许ybwork.Async.Task<>作为异步函数的返回值
