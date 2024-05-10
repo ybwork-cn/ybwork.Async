@@ -36,6 +36,7 @@ namespace ybwork.Async
                 AwaiterBase awaiter = TaskAwaiters[i];
                 if (awaiter.IsCompleted || !awaiter.MoveNext())
                 {
+                    awaiter.Complete();
                     TaskAwaiters.RemoveAt(i);
                     i--;
                 }

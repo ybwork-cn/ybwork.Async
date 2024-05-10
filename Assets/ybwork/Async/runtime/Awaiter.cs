@@ -1,43 +1,48 @@
 ﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
 
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace ybwork.Async.Awaiters
 {
-    public abstract class AwaiterBase : INotifyCompletion
+    public class AwaiterBase : INotifyCompletion
     {
         protected Action Continuation;
+        public object Result { get; protected set; }
         public bool IsCompleted { get; protected set; } = false;
 
-        protected AwaiterBase()
+        internal AwaiterBase()
         {
             TaskManager.Instance.AddTaskAwaiter(this);
         }
 
         public virtual bool MoveNext()
         {
-            if (IsCompleted)
-            {
-                Continuation?.Invoke();
-                Continuation = null;
-                return false;
-            }
-            return true;
+            return !IsCompleted;
         }
 
-        public void GetResult() { }
+        public object GetResult()
+        {
+            return Result;
+        }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void SetValue(object result)
         {
+            Result = result;
             Complete();
         }
 
-        protected void Complete()
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Complete()
         {
             IsCompleted = true;
-            MoveNext();
+            Continuation?.Invoke();
+            Continuation = null;
         }
 
         public void SetException()
@@ -45,6 +50,8 @@ namespace ybwork.Async.Awaiters
             IsCompleted = true;
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation)
         {
             if (IsCompleted)
@@ -69,22 +76,14 @@ namespace ybwork.Async.Awaiters
                 throw new NullReferenceException("predicate参数未绑定任何方法");
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool MoveNext()
         {
             if (IsCompleted)
                 return false;
-
-            if (!_predicate.Invoke())
-            {
-                return true;
-            }
-            else
-            {
-                IsCompleted = true;
-                Continuation?.Invoke();
-                Continuation = null;
-                return false;
-            }
+            IsCompleted = _predicate.Invoke();
+            return !IsCompleted;
         }
     }
 
@@ -100,7 +99,7 @@ namespace ybwork.Async.Awaiters
         public override bool MoveNext()
         {
             IsCompleted = endtime <= Time.time;
-            return base.MoveNext();
+            return !IsCompleted;
         }
     }
 
@@ -118,7 +117,7 @@ namespace ybwork.Async.Awaiters
         {
             IsCompleted = _currentFrame >= _frameCount;
             _currentFrame++;
-            return base.MoveNext();
+            return !IsCompleted;
         }
     }
 
@@ -131,44 +130,76 @@ namespace ybwork.Async.Awaiters
         {
             IsCompleted = _isDone;
             _isDone = true;
-            return base.MoveNext();
+            return !IsCompleted;
         }
     }
 
-    public class Awaiter : AwaiterBase
+    internal class MutiAwaiter : AwaiterBase
     {
-        public object Result { get; private set; }
-
-        public new object GetResult()
+        public enum WaiteType
         {
-            return Result;
+            WaitAll,
+            WaitAny,
         }
 
-        public override void SetValue(object result)
+        private int _restCount;
+
+        public MutiAwaiter(YueTask[] tasks, WaiteType type) : base()
         {
-            Result = result;
-            Complete();
+            _restCount = type switch
+            {
+                WaiteType.WaitAll => tasks.Length,
+                WaiteType.WaitAny => 1,
+                _ => throw new NotImplementedException(),
+            };
+
+            foreach (YueTask task in tasks)
+            {
+                task.Then(OnItemTaskEnd);
+            }
+        }
+
+        private void OnItemTaskEnd()
+        {
+            _restCount--;
+        }
+
+        public override bool MoveNext()
+        {
+            IsCompleted = _restCount <= 0;
+            return !IsCompleted;
         }
     }
 
     public class Awaiter<T> : AwaiterBase
     {
-        public T Result { get; private set; }
+        public new T Result
+        {
+            get => (T)base.Result;
+            set => base.Result = value;
+        }
 
         public new T GetResult()
         {
             return Result;
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(T result)
         {
             Result = result;
             Complete();
         }
 
-        public override void SetValue(object result)
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void OnCompleted(Action<T> continuation)
         {
-            SetValue((T)result);
+            if (IsCompleted)
+                continuation.Invoke(Result);
+            else
+                Continuation += () => continuation.Invoke(Result);
         }
     }
 }

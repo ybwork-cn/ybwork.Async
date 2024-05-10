@@ -1,6 +1,7 @@
 ﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
 
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using ybwork.Async.Awaiters;
 
@@ -13,7 +14,7 @@ namespace ybwork.Async
 
         public YueTask()
         {
-            TaskAwaiter = new Awaiter();
+            TaskAwaiter = new AwaiterBase();
         }
 
         protected YueTask(AwaiterBase awaiter)
@@ -26,51 +27,44 @@ namespace ybwork.Async
             return TaskAwaiter;
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(object result)
         {
             TaskAwaiter.SetValue(result);
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetException()
         {
             TaskAwaiter.SetException();
         }
 
+        /// <summary>
+        /// 多次注册不保证触发顺序固定
+        /// </summary>
+        /// <param name="action"></param>
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Then(Action action)
         {
             TaskAwaiter.OnCompleted(action);
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask WaitAny(params YueTask[] tasks)
         {
-            bool waiting = true;
-            YueTask result = new YueTask();
-            foreach (var task in tasks)
-            {
-                task.Then(() =>
-                {
-                    if (!waiting)
-                        return;
-                    waiting = false;
-                    result.SetValue(null);
-                });
-            }
+            YueTask result = new YueTask(new MutiAwaiter(tasks, MutiAwaiter.WaiteType.WaitAny));
             return result;
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask WaitAll(params YueTask[] tasks)
         {
-            YueTask result = new YueTask();
-            int count = tasks.Length;
-            foreach (var task in tasks)
-            {
-                task.Then(() =>
-                {
-                    count--;
-                    if (count == 0)
-                        result.SetValue(null);
-                });
-            }
+            YueTask result = new YueTask(new MutiAwaiter(tasks, MutiAwaiter.WaiteType.WaitAll));
             return result;
         }
 
@@ -83,27 +77,34 @@ namespace ybwork.Async
     [AsyncMethodBuilder(typeof(TaskMethodBuilder<>))]  //允许ybwork.Async.Task<>作为异步函数的返回值
     public class YueTask<T> : YueTask
     {
+        private new Awaiter<T> TaskAwaiter => base.TaskAwaiter as Awaiter<T>;
+
         public YueTask() : base(new Awaiter<T>())
         {
         }
 
         public new Awaiter<T> GetAwaiter()
         {
-            return TaskAwaiter as Awaiter<T>;
+            return TaskAwaiter;
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(T result)
         {
-            base.SetValue(result);
+            Awaiter<T> awaiter = TaskAwaiter;
+            awaiter.SetValue(result);
         }
 
+        /// <summary>
+        /// 多次注册不保证触发顺序固定
+        /// </summary>
+        /// <param name="action"></param>
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Then(Action<T> action)
         {
-            Then(() =>
-            {
-                T result = (TaskAwaiter as Awaiter<T>).GetResult();
-                action?.Invoke(result);
-            });
+            TaskAwaiter.OnCompleted(action);
         }
     }
 }

@@ -13,9 +13,9 @@ public class MyTaskTest : MonoBehaviour
 
     private async void Test()
     {
-        await YueTask.WaitUntil(() => Time.time > 5);
+        await YueTask.WaitUntil(() => Time.time > 1);
 
-        YueTask task1 = YueTask.Delay(3);
+        YueTask task1 = YueTask.Delay(1);
         task1.Then(() =>
         {
             Log(8);
