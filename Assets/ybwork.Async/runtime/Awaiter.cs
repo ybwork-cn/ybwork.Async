@@ -9,7 +9,7 @@ namespace ybwork.Async.Awaiters
 {
     public class AwaiterBase : INotifyCompletion
     {
-        protected Action Continuation;
+        protected Action _continuation;
         public object Result { get; protected set; }
         public bool IsCompleted { get; protected set; } = false;
 
@@ -41,8 +41,8 @@ namespace ybwork.Async.Awaiters
         public void Complete()
         {
             IsCompleted = true;
-            Continuation?.Invoke();
-            Continuation = null;
+            _continuation?.Invoke();
+            _continuation = null;
         }
 
         public void SetException()
@@ -60,7 +60,7 @@ namespace ybwork.Async.Awaiters
             }
             else
             {
-                Continuation += continuation;
+                _continuation += continuation;
             }
         }
     }
@@ -89,16 +89,16 @@ namespace ybwork.Async.Awaiters
 
     internal class DeleyAwaiter : AwaiterBase
     {
-        private readonly float endtime;
+        private readonly float _endtime;
 
         internal DeleyAwaiter(float duration) : base()
         {
-            endtime = Time.time + duration;
+            _endtime = Time.time + duration;
         }
 
         public override bool MoveNext()
         {
-            IsCompleted = endtime <= Time.time;
+            IsCompleted = _endtime <= Time.time;
             return !IsCompleted;
         }
     }
@@ -199,7 +199,7 @@ namespace ybwork.Async.Awaiters
             if (IsCompleted)
                 continuation.Invoke(Result);
             else
-                Continuation += () => continuation.Invoke(Result);
+                _continuation += () => continuation.Invoke(Result);
         }
     }
 }

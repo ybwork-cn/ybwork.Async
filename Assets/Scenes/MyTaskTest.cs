@@ -4,7 +4,7 @@ using ybwork.Async;
 
 public class MyTaskTest : MonoBehaviour
 {
-    [SerializeField] Image Image;
+    [SerializeField] Image _image;
 
     private void Start()
     {
@@ -43,8 +43,8 @@ public class MyTaskTest : MonoBehaviour
     {
         string url = "https://img-home.csdnimg.cn/images/20201124032511.png";
         Sprite sprite = await SpriteLoader.LoadSpriteFromUrl(url);
-        Image.sprite = sprite;
-        Image.rectTransform.sizeDelta = new Vector2(sprite.texture.width, sprite.texture.height);
+        _image.sprite = sprite;
+        _image.rectTransform.sizeDelta = new Vector2(sprite.texture.width, sprite.texture.height);
         return 2;
     }
 

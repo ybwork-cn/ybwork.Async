@@ -10,35 +10,35 @@ namespace ybwork.Async
     [AsyncMethodBuilder(typeof(TaskMethodBuilder))]  //允许YueTask<>作为异步函数的返回值
     public class YueTask
     {
-        protected readonly AwaiterBase TaskAwaiter;
+        protected readonly AwaiterBase _taskAwaiter;
 
         public YueTask()
         {
-            TaskAwaiter = new AwaiterBase();
+            _taskAwaiter = new AwaiterBase();
         }
 
         protected YueTask(AwaiterBase awaiter)
         {
-            TaskAwaiter = awaiter;
+            _taskAwaiter = awaiter;
         }
 
         public AwaiterBase GetAwaiter()
         {
-            return TaskAwaiter;
+            return _taskAwaiter;
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(object result)
         {
-            TaskAwaiter.SetValue(result);
+            _taskAwaiter.SetValue(result);
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetException()
         {
-            TaskAwaiter.SetException();
+            _taskAwaiter.SetException();
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Then(Action action)
         {
-            TaskAwaiter.OnCompleted(action);
+            _taskAwaiter.OnCompleted(action);
         }
 
         [DebuggerHidden]
@@ -77,22 +77,23 @@ namespace ybwork.Async
     [AsyncMethodBuilder(typeof(TaskMethodBuilder<>))]  //允许ybwork.Async.Task<>作为异步函数的返回值
     public class YueTask<T> : YueTask
     {
-        private new Awaiter<T> TaskAwaiter => base.TaskAwaiter as Awaiter<T>;
+        private new readonly Awaiter<T> _taskAwaiter;
 
         public YueTask() : base(new Awaiter<T>())
         {
+            _taskAwaiter = base._taskAwaiter as Awaiter<T>;
         }
 
         public new Awaiter<T> GetAwaiter()
         {
-            return TaskAwaiter;
+            return _taskAwaiter;
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(T result)
         {
-            Awaiter<T> awaiter = TaskAwaiter;
+            Awaiter<T> awaiter = _taskAwaiter;
             awaiter.SetValue(result);
         }
 
@@ -104,7 +105,7 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Then(Action<T> action)
         {
-            TaskAwaiter.OnCompleted(action);
+            _taskAwaiter.OnCompleted(action);
         }
     }
 }
