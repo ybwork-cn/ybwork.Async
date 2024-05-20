@@ -18,6 +18,7 @@ public class MyTaskTest : MonoBehaviour
         YueTask task1 = YueTask.Delay(1);
         task1.Then(() =>
         {
+            throw new System.Exception("aaa");
             Log(8);
         });
 
