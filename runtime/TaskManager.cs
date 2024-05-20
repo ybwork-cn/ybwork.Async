@@ -1,12 +1,13 @@
 ﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ybwork.Async.Awaiters;
 
 namespace ybwork.Async
 {
-    class MonoSingleton<T> : MonoBehaviour where T : MonoBehaviour
+    internal class MonoSingleton<T> : MonoBehaviour where T : MonoBehaviour
     {
         private static T _instance;
         public static T Instance
@@ -23,7 +24,7 @@ namespace ybwork.Async
         }
     }
 
-    class TaskManager : MonoSingleton<TaskManager>
+    internal class TaskManager : MonoSingleton<TaskManager>
     {
         public int Count;
         private readonly List<AwaiterBase> _taskAwaiters = new();
@@ -38,11 +39,28 @@ namespace ybwork.Async
             for (int i = 0; i < _taskAwaiters.Count; i++)
             {
                 AwaiterBase awaiter = _taskAwaiters[i];
-                if (awaiter.IsCompleted || !awaiter.MoveNext())
+
+                bool remove = false;
+                try
                 {
-                    awaiter.Complete();
-                    _taskAwaiters.RemoveAt(i);
-                    i--;
+                    if (awaiter.IsCompleted || !awaiter.MoveNext())
+                    {
+                        awaiter.Complete();
+                        remove = true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                    remove = true;
+                }
+                finally
+                {
+                    if (remove)
+                    {
+                        _taskAwaiters.RemoveAt(i);
+                        i--;
+                    }
                 }
             }
             Count = _taskAwaiters.Count;
