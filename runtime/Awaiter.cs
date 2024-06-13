@@ -9,22 +9,28 @@ namespace ybwork.Async.Awaiters
 {
     public class AwaiterBase : INotifyCompletion
     {
-        protected Action _continuation;
-        public object Result { get; protected set; }
-        public bool IsCompleted { get; protected set; } = false;
+        internal Action _continuation;
+        internal object Result { get; protected private set; }
+        public bool IsCompleted { get; protected private set; } = false;
 
         internal AwaiterBase()
         {
             TaskManager.Instance.AddTaskAwaiter(this);
         }
 
-        public virtual bool MoveNext()
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal virtual bool MoveNext()
         {
             return !IsCompleted;
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public object GetResult()
         {
+            if (!IsCompleted)
+                throw new InvalidOperationException("YueTask未完成");
             return Result;
         }
 
@@ -45,10 +51,9 @@ namespace ybwork.Async.Awaiters
             _continuation = null;
         }
 
-        public void SetException()
-        {
-            IsCompleted = true;
-        }
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetException() => IsCompleted = true;
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -78,7 +83,7 @@ namespace ybwork.Async.Awaiters
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override bool MoveNext()
+        internal override bool MoveNext()
         {
             if (IsCompleted)
                 return false;
@@ -96,7 +101,7 @@ namespace ybwork.Async.Awaiters
             _endtime = Time.time + duration;
         }
 
-        public override bool MoveNext()
+        internal override bool MoveNext()
         {
             IsCompleted = _endtime <= Time.time;
             return !IsCompleted;
@@ -113,7 +118,7 @@ namespace ybwork.Async.Awaiters
             _frameCount = frameCount;
         }
 
-        public override bool MoveNext()
+        internal override bool MoveNext()
         {
             IsCompleted = _currentFrame >= _frameCount;
             _currentFrame++;
@@ -126,7 +131,7 @@ namespace ybwork.Async.Awaiters
         private bool _isDone;
         internal YieldAwaiter() : base() { }
 
-        public override bool MoveNext()
+        internal override bool MoveNext()
         {
             IsCompleted = _isDone;
             _isDone = true;
@@ -164,7 +169,7 @@ namespace ybwork.Async.Awaiters
             _restCount--;
         }
 
-        public override bool MoveNext()
+        internal override bool MoveNext()
         {
             IsCompleted = _restCount <= 0;
             return !IsCompleted;
@@ -173,7 +178,7 @@ namespace ybwork.Async.Awaiters
 
     public class Awaiter<T> : AwaiterBase
     {
-        public new T Result
+        protected new T Result
         {
             get => (T)base.Result;
             set => base.Result = value;
@@ -181,6 +186,8 @@ namespace ybwork.Async.Awaiters
 
         public new T GetResult()
         {
+            if (!IsCompleted)
+                throw new InvalidOperationException("YueTask未完成");
             return Result;
         }
 
