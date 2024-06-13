@@ -13,31 +13,11 @@ public class MyTaskTest : MonoBehaviour
 
     private async void Test()
     {
-        await YueTask.WaitUntil(() => Time.time > 1);
-
-        YueTask task1 = YueTask.Delay(1);
-        task1.Then(() =>
-        {
-            throw new System.Exception("aaa");
-            Log(8);
-        });
-
-        YueTask<int> task2 = Test1();
-        task2.Then((value) =>
-        {
-            Log("Task2:" + value);
-        });
-
-        await YueTask.WaitAll(task1, task2);
-        Log("Test");
-        task1.Then(() =>
-        {
-            Log("Task1--");
-        });
-        task2.Then((value) =>
-        {
-            Log("Task2--:" + value);
-        });
+        Log("0");
+        await YueTask.CompletedTask;
+        Log("1");
+        int v = await Test1();
+        Log(v);
     }
 
     private async YueTask<int> Test1()
