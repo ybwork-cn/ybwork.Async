@@ -70,6 +70,19 @@ namespace ybwork.Async.Awaiters
         }
     }
 
+    internal class CompletedAwaiter : AwaiterBase
+    {
+        internal CompletedAwaiter() : base()
+        {
+            IsCompleted = true;
+        }
+
+        public override void SetValue(object result)
+        {
+            Complete();
+        }
+    }
+
     internal class WaitUntilAwater : AwaiterBase
     {
         private readonly Func<bool> _predicate;

@@ -52,6 +52,8 @@ namespace ybwork.Async
             _taskAwaiter.OnCompleted(action);
         }
 
+        public static YueTask CompletedTask = new YueTask(new CompletedAwaiter());
+
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask WaitAny(params YueTask[] tasks)
