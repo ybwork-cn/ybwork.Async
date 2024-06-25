@@ -10,7 +10,6 @@ namespace ybwork.Async.Awaiters
     public class AwaiterBase : INotifyCompletion
     {
         internal Action _continuation;
-        internal object Result { get; protected private set; }
         public bool IsCompleted { get; protected private set; } = false;
 
         internal AwaiterBase()
@@ -27,24 +26,22 @@ namespace ybwork.Async.Awaiters
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public object GetResult()
+        public void GetResult()
         {
             if (!IsCompleted)
                 throw new InvalidOperationException("YueTask未完成");
-            return Result;
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void SetValue(object result)
+        internal void SetValue()
         {
-            Result = result;
             Complete();
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Complete()
+        internal void Complete()
         {
             IsCompleted = true;
             _continuation?.Invoke();
@@ -53,7 +50,7 @@ namespace ybwork.Async.Awaiters
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetException() => IsCompleted = true;
+        internal void SetException() => IsCompleted = true;
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -75,11 +72,6 @@ namespace ybwork.Async.Awaiters
         internal CompletedAwaiter() : base()
         {
             IsCompleted = true;
-        }
-
-        public override void SetValue(object result)
-        {
-            Complete();
         }
     }
 
@@ -191,24 +183,20 @@ namespace ybwork.Async.Awaiters
 
     public class Awaiter<T> : AwaiterBase
     {
-        protected new T Result
-        {
-            get => (T)base.Result;
-            set => base.Result = value;
-        }
+        private T _result;
 
         public new T GetResult()
         {
             if (!IsCompleted)
                 throw new InvalidOperationException("YueTask未完成");
-            return Result;
+            return _result;
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(T result)
         {
-            Result = result;
+            _result = result;
             Complete();
         }
 
@@ -217,9 +205,9 @@ namespace ybwork.Async.Awaiters
         public void OnCompleted(Action<T> continuation)
         {
             if (IsCompleted)
-                continuation.Invoke(Result);
+                continuation.Invoke(_result);
             else
-                _continuation += () => continuation.Invoke(Result);
+                _continuation += () => continuation.Invoke(_result);
         }
     }
 }

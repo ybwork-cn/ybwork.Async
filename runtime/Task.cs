@@ -29,14 +29,14 @@ namespace ybwork.Async
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetValue(object result)
+        public void SetValue()
         {
-            _taskAwaiter.SetValue(result);
+            _taskAwaiter.SetValue();
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetException()
+        internal void SetException()
         {
             _taskAwaiter.SetException();
         }
@@ -89,6 +89,14 @@ namespace ybwork.Async
         public new Awaiter<T> GetAwaiter()
         {
             return _taskAwaiter;
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [Obsolete]
+        public new void SetValue()
+        {
+            base.SetValue();
         }
 
         [DebuggerHidden]
