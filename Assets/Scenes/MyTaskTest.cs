@@ -16,8 +16,12 @@ public class MyTaskTest : MonoBehaviour
         Log("0");
         await YueTask.CompletedTask;
         Log("1");
-        int v = await Test1();
-        Log(v);
+        await YueTask.Delay(1);
+        Log("2");
+        int v1 = await Test1();
+        Log(v1);
+        bool v2 = await Test2();
+        Log(v2);
     }
 
     private async YueTask<int> Test1()
@@ -27,6 +31,13 @@ public class MyTaskTest : MonoBehaviour
         _image.sprite = sprite;
         _image.rectTransform.sizeDelta = new Vector2(sprite.texture.width, sprite.texture.height);
         return 2;
+    }
+
+    private YueTask<bool> Test2()
+    {
+        YueTask<bool> task = new YueTask<bool>();
+        task.SetValue(true);
+        return task;
     }
 
     private void Log(object obj)

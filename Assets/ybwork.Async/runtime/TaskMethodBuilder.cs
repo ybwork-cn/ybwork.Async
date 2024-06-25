@@ -20,11 +20,7 @@ namespace ybwork.Async
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetResult(object result) => _response.SetValue(result);
-
-        [DebuggerHidden]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetResult() => _response.SetValue(null);
+        public void SetResult() => _response.SetValue();
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
