@@ -7,25 +7,22 @@ using ybwork.Async.Awaiters;
 
 namespace ybwork.Async
 {
-    internal class MonoSingleton<T> : MonoBehaviour where T : MonoBehaviour
+    public sealed class YueTaskManager : MonoBehaviour
     {
-        private static T _instance;
-        public static T Instance
+        private static YueTaskManager _instance;
+        public static YueTaskManager Instance
         {
             get
             {
                 if (_instance == null)
                 {
-                    _instance = new GameObject(typeof(T).Name).AddComponent<T>();
+                    _instance = new GameObject(nameof(YueTaskManager)).AddComponent<YueTaskManager>();
                     DontDestroyOnLoad(_instance);
                 }
                 return _instance;
             }
         }
-    }
 
-    internal class TaskManager : MonoSingleton<TaskManager>
-    {
         public int Count;
         private readonly List<AwaiterBase> _taskAwaiters1 = new();
         private readonly List<AwaiterBase> _taskAwaiters2 = new();
@@ -33,6 +30,23 @@ namespace ybwork.Async
         public void AddTaskAwaiter(AwaiterBase taskAwaiter)
         {
             _taskAwaiters2.Add(taskAwaiter);
+        }
+
+        /// <summary>
+        /// 停止所有正在运行的YueTask
+        /// </summary>
+        public void CancelAllTask()
+        {
+            foreach (AwaiterBase awaiter in _taskAwaiters1)
+            {
+                if (!awaiter.IsCompleted)
+                    awaiter.Cancel();
+            }
+            foreach (AwaiterBase awaiter in _taskAwaiters2)
+            {
+                if (!awaiter.IsCompleted)
+                    awaiter.Cancel();
+            }
         }
 
         private void Update()
