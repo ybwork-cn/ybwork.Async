@@ -27,43 +27,37 @@ namespace ybwork.Async
     internal class TaskManager : MonoSingleton<TaskManager>
     {
         public int Count;
-        private readonly List<AwaiterBase> _taskAwaiters = new();
+        private readonly List<AwaiterBase> _taskAwaiters1 = new();
+        private readonly List<AwaiterBase> _taskAwaiters2 = new();
 
         public void AddTaskAwaiter(AwaiterBase taskAwaiter)
         {
-            _taskAwaiters.Add(taskAwaiter);
+            _taskAwaiters2.Add(taskAwaiter);
         }
 
         private void Update()
         {
-            for (int i = 0; i < _taskAwaiters.Count; i++)
-            {
-                AwaiterBase awaiter = _taskAwaiters[i];
+            _taskAwaiters1.Clear();
+            _taskAwaiters1.AddRange(_taskAwaiters2);
+            _taskAwaiters2.Clear();
 
-                bool remove = false;
+            foreach (AwaiterBase awaiter in _taskAwaiters1)
+            {
+                if (awaiter.IsCompleted)
+                    continue;
+
                 try
                 {
-                    if (awaiter.IsCompleted || !awaiter.MoveNext())
-                    {
-                        awaiter.Complete();
-                        remove = true;
-                    }
+                    if (awaiter.MoveNext())
+                        _taskAwaiters2.Add(awaiter);
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(e);
-                    remove = true;
-                }
-                finally
-                {
-                    if (remove)
-                    {
-                        _taskAwaiters.RemoveAt(i);
-                        i--;
-                    }
                 }
             }
-            Count = _taskAwaiters.Count;
+
+            Count = _taskAwaiters1.Count;
         }
     }
 }
