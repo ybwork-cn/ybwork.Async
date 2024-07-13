@@ -24,10 +24,10 @@ namespace ybwork.Async
         }
 
         public int Count;
-        private readonly List<AwaiterBase> _taskAwaiters1 = new();
-        private readonly List<AwaiterBase> _taskAwaiters2 = new();
+        private readonly List<IAwaiter> _taskAwaiters1 = new();
+        private readonly List<IAwaiter> _taskAwaiters2 = new();
 
-        public void AddTaskAwaiter(AwaiterBase taskAwaiter)
+        public void AddTaskAwaiter(IAwaiter taskAwaiter)
         {
             _taskAwaiters2.Add(taskAwaiter);
         }
@@ -37,14 +37,14 @@ namespace ybwork.Async
         /// </summary>
         public void CancelAllTask()
         {
-            foreach (AwaiterBase awaiter in _taskAwaiters1)
+            foreach (IAwaiter awaiter in _taskAwaiters1)
             {
-                if (!awaiter.IsCompleted)
+                if (awaiter.State == AwaiterState.Started)
                     awaiter.Cancel();
             }
-            foreach (AwaiterBase awaiter in _taskAwaiters2)
+            foreach (IAwaiter awaiter in _taskAwaiters2)
             {
-                if (!awaiter.IsCompleted)
+                if (awaiter.State == AwaiterState.Started)
                     awaiter.Cancel();
             }
         }
@@ -55,14 +55,15 @@ namespace ybwork.Async
             _taskAwaiters1.AddRange(_taskAwaiters2);
             _taskAwaiters2.Clear();
 
-            foreach (AwaiterBase awaiter in _taskAwaiters1)
+            foreach (IAwaiter awaiter in _taskAwaiters1)
             {
-                if (awaiter.IsCompleted)
+                if (awaiter.State != AwaiterState.Started)
                     continue;
 
                 try
                 {
-                    if (awaiter.MoveNext())
+                    awaiter.MoveNext();
+                    if (awaiter.State == AwaiterState.Started)
                         _taskAwaiters2.Add(awaiter);
                 }
                 catch (Exception e)

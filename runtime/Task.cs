@@ -10,40 +10,53 @@ namespace ybwork.Async
     [AsyncMethodBuilder(typeof(TaskMethodBuilder))]  //允许YueTask<>作为异步函数的返回值
     public class YueTask
     {
-        protected readonly AwaiterBase _taskAwaiter;
+        internal IAwaiter Awaiter;
 
         public YueTask()
         {
-            _taskAwaiter = new AwaiterBase();
+            Awaiter = new Awaiter();
         }
 
-        protected YueTask(AwaiterBase awaiter)
+        private protected YueTask(AwaiterBase awaiter)
         {
-            _taskAwaiter = awaiter;
+            Awaiter = awaiter;
         }
 
-        public AwaiterBase GetAwaiter()
+        public IAwaiterVoid GetAwaiter()
         {
-            return _taskAwaiter;
+            if (Awaiter is not IAwaiterVoid awaiter)
+                throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiterVoid).Name}");
+
+            return awaiter.State switch
+            {
+                AwaiterState.Aborted => throw new InvalidOperationException("不可调用已取消的YueTask的GetAwaiter()"),
+                AwaiterState.Error => throw new InvalidOperationException("不可调用已抛出错误的YueTask的GetAwaiter()"),
+                AwaiterState.Started => awaiter,
+                AwaiterState.Completed => awaiter,
+                _ => throw new NotImplementedException(),
+            };
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue()
         {
-            _taskAwaiter.SetValue();
+            if (Awaiter is not IAwaiterVoid awaiter)
+                throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiterVoid).Name}");
+
+            awaiter.SetValue();
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void SetException()
         {
-            _taskAwaiter.SetException();
+            Awaiter.SetException();
         }
 
         public void Cancel()
         {
-            _taskAwaiter.Cancel();
+            Awaiter.Cancel();
         }
 
         /// <summary>
@@ -54,7 +67,7 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Then(Action action)
         {
-            _taskAwaiter.OnCompleted(action);
+            Awaiter.OnCompleted(action);
         }
 
         public static YueTask CompletedTask = new YueTask(new CompletedAwaiter());
@@ -84,16 +97,23 @@ namespace ybwork.Async
     [AsyncMethodBuilder(typeof(TaskMethodBuilder<>))]  //允许ybwork.Async.Task<>作为异步函数的返回值
     public class YueTask<T> : YueTask
     {
-        private new readonly Awaiter<T> _taskAwaiter;
-
         public YueTask() : base(new Awaiter<T>())
         {
-            _taskAwaiter = base._taskAwaiter as Awaiter<T>;
         }
 
-        public new Awaiter<T> GetAwaiter()
+        public new IAwaiter<T> GetAwaiter()
         {
-            return _taskAwaiter;
+            if (Awaiter is not Awaiter<T> awaiter)
+                throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiter<T>).Name}");
+
+            return awaiter.State switch
+            {
+                AwaiterState.Aborted => throw new InvalidOperationException("不可调用已取消的YueTask的GetAwaiter()"),
+                AwaiterState.Error => throw new InvalidOperationException("不可调用已抛出错误的YueTask的GetAwaiter()"),
+                AwaiterState.Started => awaiter,
+                AwaiterState.Completed => awaiter,
+                _ => throw new NotImplementedException(),
+            };
         }
 
         [DebuggerHidden]
@@ -108,7 +128,9 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(T result)
         {
-            Awaiter<T> awaiter = _taskAwaiter;
+            if (Awaiter is not Awaiter<T> awaiter)
+                throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiter<T>).Name}");
+
             awaiter.SetValue(result);
         }
 
@@ -120,7 +142,10 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Then(Action<T> action)
         {
-            _taskAwaiter.OnCompleted(action);
+            if (Awaiter is not Awaiter<T> awaiter)
+                throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiter<T>).Name}");
+
+            awaiter.OnCompleted(action);
         }
     }
 }
