@@ -7,34 +7,6 @@ using UnityEngine;
 
 namespace ybwork.Async.Awaiters
 {
-    public enum AwaiterState
-    {
-        Started,
-        Completed,
-        Aborted,
-        Error,
-    }
-
-    public interface IAwaiter : INotifyCompletion
-    {
-        AwaiterState State { get; }
-        bool IsCompleted { get; }
-        internal void MoveNext();
-        internal void SetException();
-        void Cancel();
-    }
-
-    public interface IAwaiterVoid : IAwaiter
-    {
-        void GetResult();
-        internal void SetValue();
-    }
-
-    public interface IAwaiter<T> : IAwaiter
-    {
-        T GetResult();
-    }
-
     internal abstract class AwaiterBase : IAwaiter
     {
         internal Action _continuation;
