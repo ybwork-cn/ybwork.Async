@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using ybwork.Async.Awaiters;
 
 namespace ybwork.Async
 {
@@ -46,7 +47,12 @@ namespace ybwork.Async
             where TAwaiter : INotifyCompletion
             where TStateMachine : IAsyncStateMachine
         {
-            awaiter.OnCompleted(stateMachine.MoveNext);
+            Action action = stateMachine.MoveNext;
+            awaiter.OnCompleted(() =>
+            {
+                if (_response.Awaiter.State is AwaiterState.Started or AwaiterState.Completed)
+                    action?.Invoke();
+            });
         }
 
         [DebuggerHidden]
@@ -96,7 +102,12 @@ namespace ybwork.Async
             where TAwaiter : INotifyCompletion
             where TStateMachine : IAsyncStateMachine
         {
-            awaiter.OnCompleted(stateMachine.MoveNext);
+            Action action = stateMachine.MoveNext;
+            awaiter.OnCompleted(() =>
+            {
+                if (_response.Awaiter.State is AwaiterState.Started or AwaiterState.Completed)
+                    action?.Invoke();
+            });
         }
 
         [DebuggerHidden]

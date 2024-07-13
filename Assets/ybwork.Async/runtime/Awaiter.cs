@@ -7,23 +7,43 @@ using UnityEngine;
 
 namespace ybwork.Async.Awaiters
 {
-    public class AwaiterBase : INotifyCompletion
+    public enum AwaiterState
     {
-        public enum AwaiterState
-        {
-            Started,
-            Completed,
-            Aborted,
-            Error,
-        }
+        Started,
+        Completed,
+        Aborted,
+        Error,
+    }
 
+    public interface IAwaiter : INotifyCompletion
+    {
+        AwaiterState State { get; }
+        bool IsCompleted { get; }
+        internal void MoveNext();
+        internal void SetException();
+        void Cancel();
+    }
+
+    public interface IAwaiterVoid : IAwaiter
+    {
+        void GetResult();
+        internal void SetValue();
+    }
+
+    public interface IAwaiter<T> : IAwaiter
+    {
+        T GetResult();
+    }
+
+    internal abstract class AwaiterBase : IAwaiter
+    {
         internal Action _continuation;
-        public bool IsCompleted => State != AwaiterState.Started;
+        public bool IsCompleted => State == AwaiterState.Completed;
         private AwaiterState _state;
         public AwaiterState State
         {
             get => _state;
-            protected set
+            private protected set
             {
                 if (value == AwaiterState.Started)
                 {
@@ -66,12 +86,19 @@ namespace ybwork.Async.Awaiters
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal bool MoveNext()
+        void IAwaiter.MoveNext()
         {
             OnMoveNext();
             if (State == AwaiterState.Completed)
                 Complete();
-            return !IsCompleted;
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void Complete()
+        {
+            _continuation?.Invoke();
+            _continuation = null;
         }
 
         [DebuggerHidden]
@@ -82,48 +109,13 @@ namespace ybwork.Async.Awaiters
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetResult()
-        {
-            switch (State)
-            {
-                case AwaiterState.Started:
-                    throw new InvalidOperationException("YueTask未完成");
-                case AwaiterState.Completed:
-                    break;
-                case AwaiterState.Aborted:
-                    throw new InvalidOperationException("YueTask已取消");
-                case AwaiterState.Error:
-                    throw new InvalidOperationException("YueTask已发生错误");
-                default:
-                    throw new NotImplementedException();
-            }
-        }
-
-        [DebuggerHidden]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void SetValue()
-        {
-            State = AwaiterState.Completed;
-            Complete();
-        }
-
-        [DebuggerHidden]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Complete()
-        {
-            _continuation?.Invoke();
-            _continuation = null;
-        }
-
-        [DebuggerHidden]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void SetException() => State = AwaiterState.Error;
+        void IAwaiter.SetException() => State = AwaiterState.Error;
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation)
         {
-            switch (State)
+            switch (_state)
             {
                 case AwaiterState.Started:
                     _continuation += continuation;
@@ -146,7 +138,37 @@ namespace ybwork.Async.Awaiters
         }
     }
 
-    internal class CompletedAwaiter : AwaiterBase
+    internal class Awaiter : AwaiterBase, IAwaiterVoid
+    {
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void IAwaiterVoid.SetValue()
+        {
+            State = AwaiterState.Completed;
+            Complete();
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void GetResult()
+        {
+            switch (State)
+            {
+                case AwaiterState.Started:
+                    throw new InvalidOperationException("YueTask未完成");
+                case AwaiterState.Completed:
+                    break;
+                case AwaiterState.Aborted:
+                    throw new InvalidOperationException("YueTask已取消");
+                case AwaiterState.Error:
+                    throw new InvalidOperationException("YueTask已发生错误");
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+    }
+
+    internal class CompletedAwaiter : Awaiter
     {
         internal CompletedAwaiter() : base()
         {
@@ -154,7 +176,7 @@ namespace ybwork.Async.Awaiters
         }
     }
 
-    internal class WaitUntilAwater : AwaiterBase
+    internal class WaitUntilAwater : Awaiter
     {
         private readonly Func<bool> _predicate;
 
@@ -174,7 +196,7 @@ namespace ybwork.Async.Awaiters
         }
     }
 
-    internal class DeleyAwaiter : AwaiterBase
+    internal class DeleyAwaiter : Awaiter
     {
         private readonly float _endtime;
 
@@ -190,7 +212,7 @@ namespace ybwork.Async.Awaiters
         }
     }
 
-    internal class DeleyFramesAwaiter : AwaiterBase
+    internal class DeleyFramesAwaiter : Awaiter
     {
         private readonly float _frameCount;
         private int _currentFrame = 0;
@@ -209,7 +231,7 @@ namespace ybwork.Async.Awaiters
         }
     }
 
-    internal class YieldAwaiter : AwaiterBase
+    internal class YieldAwaiter : Awaiter
     {
         private bool _isDone = false;
         internal YieldAwaiter() : base() { }
@@ -223,7 +245,7 @@ namespace ybwork.Async.Awaiters
         }
     }
 
-    internal class MutiAwaiter : AwaiterBase
+    internal class MutiAwaiter : Awaiter
     {
         public enum WaiteType
         {
@@ -260,14 +282,20 @@ namespace ybwork.Async.Awaiters
         }
     }
 
-    public class Awaiter<T> : AwaiterBase
+    internal class Awaiter<T> : AwaiterBase, IAwaiter<T>
     {
         private T _result;
 
-        public new T GetResult()
+        public T GetResult()
         {
-            base.GetResult();
-            return _result;
+            return State switch
+            {
+                AwaiterState.Started => throw new InvalidOperationException("YueTask未完成"),
+                AwaiterState.Completed => _result,
+                AwaiterState.Aborted => throw new InvalidOperationException("YueTask已取消"),
+                AwaiterState.Error => throw new InvalidOperationException("YueTask已发生错误"),
+                _ => throw new NotImplementedException(),
+            };
         }
 
         [DebuggerHidden]
@@ -275,12 +303,13 @@ namespace ybwork.Async.Awaiters
         public void SetValue(T result)
         {
             _result = result;
-            SetValue();
+            State = AwaiterState.Completed;
+            Complete();
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void OnCompleted(Action<T> continuation)
+        internal void OnCompleted(Action<T> continuation)
         {
             switch (State)
             {
