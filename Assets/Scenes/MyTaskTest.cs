@@ -18,7 +18,9 @@ public class MyTaskTest : MonoBehaviour
         Log("1");
         await YueTask.Delay(1);
         Log("2");
-        int v1 = await Test1();
+        YueTask<int> yueTask = Test1();
+        yueTask.Cancel();
+        int v1 = await yueTask;
         Log(v1);
         bool v2 = await Test2();
         Log(v2);

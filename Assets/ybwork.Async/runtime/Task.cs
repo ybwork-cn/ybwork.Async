@@ -41,6 +41,11 @@ namespace ybwork.Async
             _taskAwaiter.SetException();
         }
 
+        public void Cancel()
+        {
+            _taskAwaiter.Cancel();
+        }
+
         /// <summary>
         /// 多次注册不保证触发顺序固定
         /// </summary>

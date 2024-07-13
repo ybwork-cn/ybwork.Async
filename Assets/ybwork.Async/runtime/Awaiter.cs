@@ -9,61 +9,140 @@ namespace ybwork.Async.Awaiters
 {
     public class AwaiterBase : INotifyCompletion
     {
+        public enum AwaiterState
+        {
+            Started,
+            Completed,
+            Aborted,
+            Error,
+        }
+
         internal Action _continuation;
-        public bool IsCompleted { get; protected private set; } = false;
+        public bool IsCompleted => State != AwaiterState.Started;
+        private AwaiterState _state;
+        public AwaiterState State
+        {
+            get => _state;
+            protected set
+            {
+                if (value == AwaiterState.Started)
+                {
+                    throw new MulticastNotSupportedException("不支持多次尝试开始一个YueTask");
+                }
+                else if (value == AwaiterState.Completed)
+                {
+                    _state = _state switch
+                    {
+                        AwaiterState.Started => AwaiterState.Completed,
+                        AwaiterState.Completed => throw new MulticastNotSupportedException("不支持多次尝试完成一个YueTask"),
+                        AwaiterState.Aborted => throw new InvalidOperationException("不支持尝试完成一个已取消的YueTask"),
+                        AwaiterState.Error => throw new InvalidOperationException("不支持尝试完成一个已抛出错误的YueTask"),
+                        _ => throw new NotImplementedException(),
+                    };
+                }
+                else if (value == AwaiterState.Aborted)
+                {
+                    _state = _state switch
+                    {
+                        AwaiterState.Started => AwaiterState.Aborted,
+                        AwaiterState.Completed => throw new InvalidOperationException("不支持尝试取消一个已完成的YueTask"),
+                        AwaiterState.Aborted => throw new MulticastNotSupportedException("不支持多次尝试取消一个YueTask"),
+                        AwaiterState.Error => throw new InvalidOperationException("不支持尝试取消一个已抛出错误的YueTask"),
+                        _ => throw new NotImplementedException(),
+                    };
+                }
+                else if (value == AwaiterState.Error)
+                {
+                    _state = AwaiterState.Error;
+                }
+            }
+        }
 
         internal AwaiterBase()
         {
+            _state = AwaiterState.Started;
             TaskManager.Instance.AddTaskAwaiter(this);
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal virtual bool MoveNext()
+        internal bool MoveNext()
         {
+            OnMoveNext();
+            if (State == AwaiterState.Completed)
+                Complete();
             return !IsCompleted;
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual void OnMoveNext()
+        {
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void GetResult()
         {
-            if (!IsCompleted)
-                throw new InvalidOperationException("YueTask未完成");
+            switch (State)
+            {
+                case AwaiterState.Started:
+                    throw new InvalidOperationException("YueTask未完成");
+                case AwaiterState.Completed:
+                    break;
+                case AwaiterState.Aborted:
+                    throw new InvalidOperationException("YueTask已取消");
+                case AwaiterState.Error:
+                    throw new InvalidOperationException("YueTask已发生错误");
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void SetValue()
         {
+            State = AwaiterState.Completed;
             Complete();
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void Complete()
+        private void Complete()
         {
-            IsCompleted = true;
             _continuation?.Invoke();
             _continuation = null;
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void SetException() => IsCompleted = true;
+        internal void SetException() => State = AwaiterState.Error;
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action continuation)
         {
-            if (IsCompleted)
+            switch (State)
             {
-                continuation.Invoke();
+                case AwaiterState.Started:
+                    _continuation += continuation;
+                    break;
+                case AwaiterState.Completed:
+                    continuation?.Invoke();
+                    break;
+                case AwaiterState.Aborted:
+                    throw new InvalidOperationException("YueTask已取消");
+                case AwaiterState.Error:
+                    throw new InvalidOperationException("YueTask已发生错误");
+                default:
+                    throw new NotImplementedException();
             }
-            else
-            {
-                _continuation += continuation;
-            }
+        }
+
+        public void Cancel()
+        {
+            State = AwaiterState.Aborted;
         }
     }
 
@@ -71,7 +150,7 @@ namespace ybwork.Async.Awaiters
     {
         internal CompletedAwaiter() : base()
         {
-            IsCompleted = true;
+            State = AwaiterState.Completed;
         }
     }
 
@@ -88,12 +167,10 @@ namespace ybwork.Async.Awaiters
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal override bool MoveNext()
+        protected override void OnMoveNext()
         {
-            if (IsCompleted)
-                return false;
-            IsCompleted = _predicate.Invoke();
-            return !IsCompleted;
+            if (_predicate.Invoke())
+                State = AwaiterState.Completed;
         }
     }
 
@@ -106,10 +183,10 @@ namespace ybwork.Async.Awaiters
             _endtime = Time.time + duration;
         }
 
-        internal override bool MoveNext()
+        protected override void OnMoveNext()
         {
-            IsCompleted = _endtime <= Time.time;
-            return !IsCompleted;
+            if (_endtime <= Time.time)
+                State = AwaiterState.Completed;
         }
     }
 
@@ -123,24 +200,26 @@ namespace ybwork.Async.Awaiters
             _frameCount = frameCount;
         }
 
-        internal override bool MoveNext()
+        protected override void OnMoveNext()
         {
-            IsCompleted = _currentFrame >= _frameCount;
+            if (_currentFrame >= _frameCount)
+                State = AwaiterState.Completed;
+
             _currentFrame++;
-            return !IsCompleted;
         }
     }
 
     internal class YieldAwaiter : AwaiterBase
     {
-        private bool _isDone;
+        private bool _isDone = false;
         internal YieldAwaiter() : base() { }
 
-        internal override bool MoveNext()
+        protected override void OnMoveNext()
         {
-            IsCompleted = _isDone;
+            if (_isDone)
+                State = AwaiterState.Completed;
+
             _isDone = true;
-            return !IsCompleted;
         }
     }
 
@@ -174,10 +253,10 @@ namespace ybwork.Async.Awaiters
             _restCount--;
         }
 
-        internal override bool MoveNext()
+        protected override void OnMoveNext()
         {
-            IsCompleted = _restCount <= 0;
-            return !IsCompleted;
+            if (_restCount <= 0)
+                State = AwaiterState.Completed;
         }
     }
 
@@ -187,8 +266,7 @@ namespace ybwork.Async.Awaiters
 
         public new T GetResult()
         {
-            if (!IsCompleted)
-                throw new InvalidOperationException("YueTask未完成");
+            base.GetResult();
             return _result;
         }
 
@@ -197,17 +275,28 @@ namespace ybwork.Async.Awaiters
         public void SetValue(T result)
         {
             _result = result;
-            Complete();
+            SetValue();
         }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void OnCompleted(Action<T> continuation)
         {
-            if (IsCompleted)
-                continuation.Invoke(_result);
-            else
-                _continuation += () => continuation.Invoke(_result);
+            switch (State)
+            {
+                case AwaiterState.Started:
+                    _continuation += () => continuation.Invoke(_result);
+                    break;
+                case AwaiterState.Completed:
+                    continuation?.Invoke(_result);
+                    break;
+                case AwaiterState.Aborted:
+                    throw new InvalidOperationException("YueTask已取消");
+                case AwaiterState.Error:
+                    throw new InvalidOperationException("YueTask已发生错误");
+                default:
+                    throw new NotImplementedException();
+            }
         }
     }
 }
