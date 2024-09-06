@@ -170,16 +170,18 @@ namespace ybwork.Async.Awaiters
 
     internal class DeleyAwaiter : Awaiter
     {
-        private readonly float _endtime;
+        private readonly float _duration;
+        private float _elapsedTime = 0;
 
         internal DeleyAwaiter(float duration) : base()
         {
-            _endtime = Time.time + duration;
+            _duration = duration;
         }
 
         protected override void OnMoveNext()
         {
-            if (_endtime <= Time.time)
+            _elapsedTime += Time.deltaTime;
+            if (_duration <= _elapsedTime)
                 State = AwaiterState.Completed;
         }
     }
