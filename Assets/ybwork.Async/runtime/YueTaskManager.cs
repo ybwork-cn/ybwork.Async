@@ -1,6 +1,7 @@
 ﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using UnityEngine;
 using ybwork.Async.Awaiters;
@@ -24,12 +25,12 @@ namespace ybwork.Async
         }
 
         public int Count;
-        private readonly List<IAwaiter> _taskAwaiters1 = new();
-        private readonly List<IAwaiter> _taskAwaiters2 = new();
+        private readonly List<IAwaiter> _awaiters = new();
+        private readonly ConcurrentQueue<IAwaiter> _testAwaiters = new();
 
         public void AddTaskAwaiter(IAwaiter taskAwaiter)
         {
-            _taskAwaiters2.Add(taskAwaiter);
+            _testAwaiters.Enqueue(taskAwaiter);
         }
 
         /// <summary>
@@ -37,12 +38,13 @@ namespace ybwork.Async
         /// </summary>
         public void CancelAllTask()
         {
-            foreach (IAwaiter awaiter in _taskAwaiters1)
+            foreach (IAwaiter awaiter in _awaiters)
             {
                 if (awaiter.State == AwaiterState.Started)
                     awaiter.Cancel();
             }
-            foreach (IAwaiter awaiter in _taskAwaiters2)
+            _awaiters.Clear();
+            while (_testAwaiters.TryDequeue(out IAwaiter awaiter))
             {
                 if (awaiter.State == AwaiterState.Started)
                     awaiter.Cancel();
@@ -51,11 +53,13 @@ namespace ybwork.Async
 
         private void Update()
         {
-            _taskAwaiters1.Clear();
-            _taskAwaiters1.AddRange(_taskAwaiters2);
-            _taskAwaiters2.Clear();
+            while (_testAwaiters.TryDequeue(out IAwaiter awaiter))
+            {
+                _awaiters.Add(awaiter);
+            }
 
-            foreach (IAwaiter awaiter in _taskAwaiters1)
+            _awaiters.RemoveAll(awaiter => awaiter.State != AwaiterState.Started);
+            foreach (IAwaiter awaiter in _awaiters)
             {
                 if (awaiter.State != AwaiterState.Started)
                     continue;
@@ -63,8 +67,6 @@ namespace ybwork.Async
                 try
                 {
                     awaiter.MoveNext();
-                    if (awaiter.State == AwaiterState.Started)
-                        _taskAwaiters2.Add(awaiter);
                 }
                 catch (Exception e)
                 {
@@ -72,7 +74,7 @@ namespace ybwork.Async
                 }
             }
 
-            Count = _taskAwaiters1.Count;
+            Count = _awaiters.Count;
         }
     }
 }
