@@ -73,3 +73,6 @@ crashlytics-build.properties
 .vsconfig
 Packages/packages-lock.json
 .editorconfig
+
+/**/bin/
+/**/obj/
