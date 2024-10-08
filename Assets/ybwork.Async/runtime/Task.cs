@@ -7,7 +7,7 @@ using ybwork.Async.Awaiters;
 
 namespace ybwork.Async
 {
-    [AsyncMethodBuilder(typeof(TaskMethodBuilder))]  //允许YueTask<>作为异步函数的返回值
+    [AsyncMethodBuilder(typeof(YueTaskMethodBuilder))]  //允许YueTask<>作为异步函数的返回值
     public class YueTask
     {
         internal IAwaiter Awaiter;
@@ -70,6 +70,21 @@ namespace ybwork.Async
             Awaiter.OnCompleted(action);
         }
 
+        /// <summary>
+        /// 多次注册不保证触发顺序固定
+        /// </summary>
+        /// <param name="source"></param>
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async YueTask ContinueWith(Func<YueTask> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            await this;
+            await func.Invoke();
+        }
+
         public static YueTask CompletedTask = new YueTask(new CompletedAwaiter());
 
         [DebuggerHidden]
@@ -92,9 +107,23 @@ namespace ybwork.Async
         public static YueTask DelayFrames(int frameCount) => new YueTask(new DeleyFramesAwaiter(frameCount));
         public static YueTask Yield() => new YueTask(new YieldAwaiter());
         public static YueTask WaitUntil(Func<bool> predicate) => new YueTask(new WaitUntilAwater(predicate));
+        public static YueTask Run(Func<YueTask> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            return func.Invoke();
+        }
+        public static YueTask<T> Run<T>(Func<YueTask<T>> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            return func.Invoke();
+        }
     }
 
-    [AsyncMethodBuilder(typeof(TaskMethodBuilder<>))]  //允许ybwork.Async.Task<>作为异步函数的返回值
+    [AsyncMethodBuilder(typeof(YueTaskMethodBuilder<>))]  //允许ybwork.Async.Task<>作为异步函数的返回值
     public class YueTask<T> : YueTask
     {
         public YueTask() : base(new Awaiter<T>())
@@ -146,6 +175,29 @@ namespace ybwork.Async
                 throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiter<T>).Name}");
 
             awaiter.OnCompleted(action);
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async YueTask<T> ContinueWith(Func<T, YueTask<T>> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            T value = await this;
+            T result = await func.Invoke(value);
+            return result;
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async YueTask ContinueWith(Func<T, YueTask> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            T value = await this;
+            await func.Invoke(value);
         }
     }
 }

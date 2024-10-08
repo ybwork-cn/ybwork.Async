@@ -7,14 +7,14 @@ using ybwork.Async.Awaiters;
 
 namespace ybwork.Async
 {
-    public class TaskMethodBuilder
+    public class YueTaskMethodBuilder
     {
-        public static TaskMethodBuilder Create() => new TaskMethodBuilder();
+        public static YueTaskMethodBuilder Create() => new YueTaskMethodBuilder();
 
         public YueTask Task => _response;
         private readonly YueTask _response;
 
-        public TaskMethodBuilder()
+        public YueTaskMethodBuilder()
         {
             _response = new YueTask();
         }
@@ -65,14 +65,14 @@ namespace ybwork.Async
         }
     }
 
-    public class TaskMethodBuilder<T>
+    public class YueTaskMethodBuilder<T>
     {
-        public static TaskMethodBuilder<T> Create() => new TaskMethodBuilder<T>();
+        public static YueTaskMethodBuilder<T> Create() => new YueTaskMethodBuilder<T>();
 
         public YueTask<T> Task => _response;
         private readonly YueTask<T> _response;
 
-        public TaskMethodBuilder() { _response = new YueTask<T>(); }
+        public YueTaskMethodBuilder() { _response = new YueTask<T>(); }
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
