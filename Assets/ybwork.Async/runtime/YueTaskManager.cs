@@ -15,16 +15,22 @@ namespace ybwork.Async
         {
             get
             {
-                if (Application.isEditor && !Application.isPlaying)
-                    throw new InvalidOperationException($"禁止在编辑器退出后调用{nameof(YueTaskManager)}");
                 if (_instance == null)
-                    _instance = FindObjectOfType<YueTaskManager>();
-                if (_instance == null)
-                {
-                    _instance = new GameObject(nameof(YueTaskManager)).AddComponent<YueTaskManager>();
-                    DontDestroyOnLoad(_instance);
-                }
+                    Init();
                 return _instance;
+            }
+        }
+
+        public static void Init()
+        {
+            if (Application.isEditor && !Application.isPlaying)
+                throw new InvalidOperationException($"禁止在编辑器退出后调用{nameof(YueTaskManager)}");
+            if (_instance == null)
+                _instance = FindObjectOfType<YueTaskManager>();
+            if (_instance == null)
+            {
+                _instance = new GameObject(nameof(YueTaskManager)).AddComponent<YueTaskManager>();
+                DontDestroyOnLoad(_instance);
             }
         }
 
