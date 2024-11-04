@@ -44,6 +44,7 @@ namespace ybwork.Async
         public int Count;
         private readonly List<IAwaiter> _awaiters = new();
         private readonly ConcurrentQueue<IAwaiter> _testAwaiters = new();
+        private bool _isClearing = false;
 
         public void AddTaskAwaiter(IAwaiter taskAwaiter)
         {
@@ -55,17 +56,7 @@ namespace ybwork.Async
         /// </summary>
         public void CancelAllTask()
         {
-            foreach (IAwaiter awaiter in _awaiters)
-            {
-                if (awaiter.State == AwaiterState.Started)
-                    awaiter.Cancel();
-            }
-            _awaiters.Clear();
-            while (_testAwaiters.TryDequeue(out IAwaiter awaiter))
-            {
-                if (awaiter.State == AwaiterState.Started)
-                    awaiter.Cancel();
-            }
+            _isClearing = true;
         }
 
         internal bool IsMainThread
@@ -86,8 +77,12 @@ namespace ybwork.Async
             }
 
             _awaiters.RemoveAll(awaiter => awaiter.State != AwaiterState.Started);
+
             foreach (IAwaiter awaiter in _awaiters)
             {
+                if (_isClearing)
+                    break;
+
                 if (awaiter.State != AwaiterState.Started)
                     continue;
 
@@ -99,6 +94,13 @@ namespace ybwork.Async
                 {
                     Debug.LogException(e);
                 }
+            }
+
+            if (_isClearing)
+            {
+                _awaiters.Clear();
+                _testAwaiters.Clear();
+                _isClearing = false;
             }
 
             Count = _awaiters.Count;
