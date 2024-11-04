@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using ybwork.Async.Awaiters;
 
@@ -34,6 +35,12 @@ namespace ybwork.Async
             }
         }
 
+        private int? _mainThradId = null;
+        private void Awake()
+        {
+            _mainThradId = Thread.CurrentThread.ManagedThreadId;
+        }
+
         public int Count;
         private readonly List<IAwaiter> _awaiters = new();
         private readonly ConcurrentQueue<IAwaiter> _testAwaiters = new();
@@ -58,6 +65,16 @@ namespace ybwork.Async
             {
                 if (awaiter.State == AwaiterState.Started)
                     awaiter.Cancel();
+            }
+        }
+
+        internal bool IsMainThread
+        {
+            get
+            {
+                if (_mainThradId == null)
+                    throw new InvalidOperationException("请先在Unity主线程访问一次YueTaskManager.Instance");
+                return _mainThradId == Thread.CurrentThread.ManagedThreadId;
             }
         }
 

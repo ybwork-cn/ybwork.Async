@@ -114,9 +114,20 @@ namespace ybwork.Async
             return result;
         }
 
+        /// <summary>
+        /// 等待到下一个渲染帧执行
+        /// </summary>
+        /// <returns></returns>
+        public static YueTask Yield() => new YueTask(new YieldAwaiter());
+
+        /// <summary>
+        /// 等待到主线程执行（如果当前在主线程中，立即执行）
+        /// </summary>
+        /// <returns></returns>
+        public static YueTask WaitToMainThread() => YueTaskManager.Instance.IsMainThread ? CompletedTask : Yield();
+
         public static YueTask Delay(float seconds) => new YueTask(new DeleyAwaiter(seconds));
         public static YueTask DelayFrames(int frameCount) => new YueTask(new DeleyFramesAwaiter(frameCount));
-        public static YueTask Yield() => new YueTask(new YieldAwaiter());
         public static YueTask WaitUntil(Func<bool> predicate) => new YueTask(new WaitUntilAwater(predicate));
         public static YueTask Run(Func<YueTask> func)
         {
