@@ -85,6 +85,17 @@ namespace ybwork.Async
             await func.Invoke();
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async YueTask<TResult> ContinueWith<TResult>(Func<YueTask<TResult>> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            await this;
+            return await func.Invoke();
+        }
+
         public static YueTask CompletedTask = new YueTask(new CompletedAwaiter());
 
         [DebuggerHidden]
@@ -198,6 +209,17 @@ namespace ybwork.Async
 
             T value = await this;
             await func.Invoke(value);
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async YueTask<TResult> ContinueWith<TResult>(Func<T, YueTask<TResult>> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            T value = await this;
+            return await func.Invoke(value);
         }
     }
 }
