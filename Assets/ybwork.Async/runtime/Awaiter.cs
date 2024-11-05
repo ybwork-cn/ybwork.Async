@@ -27,7 +27,7 @@ namespace ybwork.Async.Awaiters
                     {
                         AwaiterState.Started => AwaiterState.Completed,
                         AwaiterState.Completed => throw new MulticastNotSupportedException("不支持多次尝试完成一个YueTask"),
-                        AwaiterState.Aborted => throw new InvalidOperationException("不支持尝试完成一个已取消的YueTask"),
+                        AwaiterState.Aborted => AwaiterState.Aborted,
                         AwaiterState.Error => throw new InvalidOperationException("不支持尝试完成一个已抛出错误的YueTask"),
                         _ => throw new NotImplementedException(),
                     };
