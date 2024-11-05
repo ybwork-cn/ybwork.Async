@@ -56,7 +56,17 @@ namespace ybwork.Async
         /// </summary>
         public void CancelAllTask()
         {
-            _isClearing = true;
+            if (!IsMainThread)
+            {
+                _isClearing = true;
+                return;
+            }
+            foreach (IAwaiter awaiter in _awaiters)
+            {
+                if (awaiter.State == AwaiterState.Started)
+                    awaiter.Cancel();
+            }
+            _testAwaiters.Clear();
         }
 
         internal bool IsMainThread
