@@ -53,7 +53,7 @@ namespace ybwork.Async.Awaiters
         internal AwaiterBase()
         {
             _state = AwaiterState.Started;
-            YueTaskManager.Instance.AddTaskAwaiter(this);
+            YueTaskManager.AddTaskAwaiter(this);
         }
 
         [DebuggerHidden]

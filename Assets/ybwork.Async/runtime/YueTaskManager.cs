@@ -11,6 +11,7 @@ namespace ybwork.Async
 {
     public sealed class YueTaskManager : MonoBehaviour
     {
+        private static int? _mainThradId = null;
         private static YueTaskManager _instance;
         public static YueTaskManager Instance
         {
@@ -24,7 +25,7 @@ namespace ybwork.Async
 
         public static void Init()
         {
-            if (Application.isEditor && !Application.isPlaying)
+            if (!Application.isPlaying)
                 throw new InvalidOperationException($"禁止在编辑器退出后调用{nameof(YueTaskManager)}");
             if (_instance == null)
                 _instance = FindObjectOfType<YueTaskManager>();
@@ -33,23 +34,19 @@ namespace ybwork.Async
                 _instance = new GameObject(nameof(YueTaskManager)).AddComponent<YueTaskManager>();
                 DontDestroyOnLoad(_instance);
             }
+            _mainThradId ??= Thread.CurrentThread.ManagedThreadId;
         }
 
-        private int? _mainThradId = null;
-        private void Awake()
+        internal static void AddTaskAwaiter(IAwaiter taskAwaiter)
         {
-            _mainThradId = Thread.CurrentThread.ManagedThreadId;
+            if (Instance != null)
+                Instance._testAwaiters.Enqueue(taskAwaiter);
         }
 
         public int Count;
         private readonly List<IAwaiter> _awaiters = new();
         private readonly ConcurrentQueue<IAwaiter> _testAwaiters = new();
         private bool _isClearing = false;
-
-        public void AddTaskAwaiter(IAwaiter taskAwaiter)
-        {
-            _testAwaiters.Enqueue(taskAwaiter);
-        }
 
         /// <summary>
         /// 停止所有正在运行的YueTask
@@ -69,12 +66,12 @@ namespace ybwork.Async
             _testAwaiters.Clear();
         }
 
-        internal bool IsMainThread
+        internal static bool IsMainThread
         {
             get
             {
                 if (_mainThradId == null)
-                    throw new InvalidOperationException("请先在Unity主线程访问一次YueTaskManager.Instance");
+                    throw new InvalidOperationException("请先在Unity主线程访问一次YueTaskManager.Instance或者创建一次YueTask");
                 return _mainThradId == Thread.CurrentThread.ManagedThreadId;
             }
         }

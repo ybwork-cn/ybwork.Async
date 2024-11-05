@@ -124,7 +124,7 @@ namespace ybwork.Async
         /// 等待到主线程执行（如果当前在主线程中，立即执行）
         /// </summary>
         /// <returns></returns>
-        public static YueTask WaitToMainThread() => YueTaskManager.Instance.IsMainThread ? CompletedTask : Yield();
+        public static YueTask WaitToMainThread() => YueTaskManager.IsMainThread ? CompletedTask : Yield();
 
         public static YueTask Delay(float seconds) => new YueTask(new DeleyAwaiter(seconds));
         public static YueTask DelayFrames(int frameCount) => new YueTask(new DeleyFramesAwaiter(frameCount));
