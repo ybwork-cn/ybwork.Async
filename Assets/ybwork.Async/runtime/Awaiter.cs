@@ -1,6 +1,7 @@
 ﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -229,11 +230,11 @@ namespace ybwork.Async.Awaiters
 
         private int _restCount;
 
-        public MutiAwaiter(YueTask[] tasks, WaiteType type) : base()
+        public MutiAwaiter(IReadOnlyCollection<YueTask> tasks, WaiteType type) : base()
         {
             _restCount = type switch
             {
-                WaiteType.WaitAll => tasks.Length,
+                WaiteType.WaitAll => tasks.Count,
                 WaiteType.WaitAny => 1,
                 _ => throw new NotImplementedException(),
             };
@@ -253,6 +254,47 @@ namespace ybwork.Async.Awaiters
         {
             if (_restCount <= 0)
                 State = AwaiterState.Completed;
+        }
+    }
+
+    internal class MutiAwaiter<T> : Awaiter<T[]>
+    {
+        private int _restCount;
+        private readonly IReadOnlyCollection<YueTask<T>> _tasks;
+        public MutiAwaiter(IReadOnlyCollection<YueTask<T>> tasks, MutiAwaiter.WaiteType type) : base()
+        {
+            this._tasks = tasks;
+            _restCount = type switch
+            {
+                MutiAwaiter.WaiteType.WaitAll => tasks.Count,
+                MutiAwaiter.WaiteType.WaitAny => 1,
+                _ => throw new NotImplementedException(),
+            };
+
+            foreach (YueTask task in tasks)
+            {
+                task.Then(OnItemTaskEnd);
+            }
+        }
+
+        private void OnItemTaskEnd()
+        {
+            _restCount--;
+        }
+
+        protected override void OnMoveNext()
+        {
+            if (_restCount <= 0)
+            {
+                var result = new T[_tasks.Count];
+                int i = 0;
+                foreach (YueTask<T> item in _tasks)
+                {
+                    result[i] = item.GetAwaiter().GetResult();
+                    i++;
+                }
+                SetValue(result);
+            }
         }
     }
 

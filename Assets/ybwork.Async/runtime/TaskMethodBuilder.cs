@@ -50,7 +50,7 @@ namespace ybwork.Async
             Action action = stateMachine.MoveNext;
             awaiter.OnCompleted(() =>
             {
-                if (_response.Awaiter.State is AwaiterState.Started or AwaiterState.Completed)
+                if (_response.GetAwaiter().State is AwaiterState.Started or AwaiterState.Completed)
                     action?.Invoke();
             });
         }
@@ -105,7 +105,7 @@ namespace ybwork.Async
             Action action = stateMachine.MoveNext;
             awaiter.OnCompleted(() =>
             {
-                if (_response.Awaiter.State is AwaiterState.Started or AwaiterState.Completed)
+                if (_response.GetAwaiter().State is AwaiterState.Started or AwaiterState.Completed)
                     action?.Invoke();
             });
         }

@@ -23,5 +23,4 @@ namespace ybwork.Async.Awaiters
     {
         T GetResult();
     }
-
 }
