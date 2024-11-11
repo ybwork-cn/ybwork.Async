@@ -1,6 +1,7 @@
 ﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using ybwork.Async.Awaiters;
@@ -10,21 +11,21 @@ namespace ybwork.Async
     [AsyncMethodBuilder(typeof(YueTaskMethodBuilder))]  //允许YueTask<>作为异步函数的返回值
     public class YueTask
     {
-        internal IAwaiter Awaiter;
+        private protected readonly IAwaiter _awaiter;
 
         public YueTask()
         {
-            Awaiter = new Awaiter();
+            _awaiter = new Awaiter();
         }
 
         private protected YueTask(AwaiterBase awaiter)
         {
-            Awaiter = awaiter;
+            _awaiter = awaiter;
         }
 
         public IAwaiterVoid GetAwaiter()
         {
-            if (Awaiter is not IAwaiterVoid awaiter)
+            if (_awaiter is not IAwaiterVoid awaiter)
                 throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiterVoid).Name}");
 
             return awaiter.State switch
@@ -41,7 +42,7 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue()
         {
-            if (Awaiter is not IAwaiterVoid awaiter)
+            if (_awaiter is not IAwaiterVoid awaiter)
                 throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiterVoid).Name}");
 
             awaiter.SetValue();
@@ -51,12 +52,12 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void SetException()
         {
-            Awaiter.SetException();
+            _awaiter.SetException();
         }
 
         public void Cancel()
         {
-            Awaiter.Cancel();
+            _awaiter.Cancel();
         }
 
         /// <summary>
@@ -67,7 +68,7 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Then(Action action)
         {
-            Awaiter.OnCompleted(action);
+            _awaiter.OnCompleted(action);
         }
 
         /// <summary>
@@ -110,7 +111,29 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask WaitAll(params YueTask[] tasks)
         {
+            return WaitAll((IReadOnlyCollection<YueTask>)tasks);
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static YueTask WaitAll(IReadOnlyCollection<YueTask> tasks)
+        {
             YueTask result = new YueTask(new MutiAwaiter(tasks, MutiAwaiter.WaiteType.WaitAll));
+            return result;
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static YueTask<T[]> WaitAll<T>(params YueTask<T>[] tasks)
+        {
+            return WaitAll((IReadOnlyCollection<YueTask<T>>)tasks);
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static YueTask<T[]> WaitAll<T>(IReadOnlyCollection<YueTask<T>> tasks)
+        {
+            YueTask<T[]> result = new YueTask<T[]>(new MutiAwaiter<T>(tasks, MutiAwaiter.WaiteType.WaitAll));
             return result;
         }
 
@@ -152,9 +175,13 @@ namespace ybwork.Async
         {
         }
 
+        internal YueTask(Awaiter<T> awaiter) : base(awaiter)
+        {
+        }
+
         public new IAwaiter<T> GetAwaiter()
         {
-            if (Awaiter is not Awaiter<T> awaiter)
+            if (_awaiter is not Awaiter<T> awaiter)
                 throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiter<T>).Name}");
 
             return awaiter.State switch
@@ -179,7 +206,7 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(T result)
         {
-            if (Awaiter is not Awaiter<T> awaiter)
+            if (_awaiter is not Awaiter<T> awaiter)
                 throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiter<T>).Name}");
 
             awaiter.SetValue(result);
@@ -193,7 +220,7 @@ namespace ybwork.Async
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Then(Action<T> action)
         {
-            if (Awaiter is not Awaiter<T> awaiter)
+            if (_awaiter is not Awaiter<T> awaiter)
                 throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiter<T>).Name}");
 
             awaiter.OnCompleted(action);
@@ -232,5 +259,7 @@ namespace ybwork.Async
             T value = await this;
             return await func.Invoke(value);
         }
+
+        public T GetResult() => GetAwaiter().GetResult();
     }
 }
