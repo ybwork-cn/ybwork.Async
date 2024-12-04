@@ -150,7 +150,9 @@ namespace ybwork.Async
         public static YueTask WaitToMainThread() => YueTaskManager.IsMainThread ? CompletedTask : Yield();
 
         public static YueTask Delay(float seconds) => new YueTask(new DeleyAwaiter(seconds));
-        public static YueTask DelayFrames(int frameCount) => new YueTask(new DeleyFramesAwaiter(frameCount));
+        public static YueTask DelayFrames(int frameCount) => frameCount > 0
+            ? new YueTask(new DeleyFramesAwaiter(frameCount))
+            : CompletedTask;
         public static YueTask WaitUntil(Func<bool> predicate) => new YueTask(new WaitUntilAwater(predicate));
         public static YueTask Run(Func<YueTask> func)
         {
