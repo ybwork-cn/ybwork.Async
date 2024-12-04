@@ -199,24 +199,19 @@ namespace ybwork.Async.Awaiters
 
         protected override void OnMoveNext()
         {
+            _currentFrame++;
             if (_currentFrame >= _frameCount)
                 State = AwaiterState.Completed;
-
-            _currentFrame++;
         }
     }
 
     internal class YieldAwaiter : Awaiter
     {
-        private bool _isDone = false;
         internal YieldAwaiter() : base() { }
 
         protected override void OnMoveNext()
         {
-            if (_isDone)
-                State = AwaiterState.Completed;
-
-            _isDone = true;
+            State = AwaiterState.Completed;
         }
     }
 
