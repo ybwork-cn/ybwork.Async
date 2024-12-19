@@ -30,8 +30,8 @@ namespace ybwork.Async
 
             return awaiter.State switch
             {
-                AwaiterState.Aborted => throw new InvalidOperationException("不可调用已取消的YueTask的GetAwaiter()"),
-                AwaiterState.Error => throw new InvalidOperationException("不可调用已抛出错误的YueTask的GetAwaiter()"),
+                AwaiterState.Aborted => awaiter,
+                AwaiterState.Error => awaiter,
                 AwaiterState.Started => awaiter,
                 AwaiterState.Completed => awaiter,
                 _ => throw new NotImplementedException(),
@@ -188,8 +188,8 @@ namespace ybwork.Async
 
             return awaiter.State switch
             {
-                AwaiterState.Aborted => throw new InvalidOperationException("不可调用已取消的YueTask的GetAwaiter()"),
-                AwaiterState.Error => throw new InvalidOperationException("不可调用已抛出错误的YueTask的GetAwaiter()"),
+                AwaiterState.Aborted => awaiter,
+                AwaiterState.Error => awaiter,
                 AwaiterState.Started => awaiter,
                 AwaiterState.Completed => awaiter,
                 _ => throw new NotImplementedException(),

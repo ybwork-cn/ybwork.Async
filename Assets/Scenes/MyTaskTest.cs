@@ -8,11 +8,7 @@ public class MyTaskTest : MonoBehaviour
 
     private void Start()
     {
-        //Test();
-        YueTask.Run(Test).Then(() =>
-        {
-            Debug.Log(1234);
-        });
+        YueTask.Run(Test);
     }
 
     private async YueTask Test()
@@ -20,8 +16,14 @@ public class MyTaskTest : MonoBehaviour
         Log("0");
         await YueTask.CompletedTask;
         Log("1");
-        await YueTask.Delay(1);
-        Log("2");
+        var delay = YueTask.Delay(1);
+        delay.Cancel();
+        delay.Then(() =>
+        {
+            Log("2");
+        });
+        Log("3");
+        await delay;
         YueTask<int> yueTask = Test1();
         //yueTask.Cancel();
         int v1 = await yueTask;
