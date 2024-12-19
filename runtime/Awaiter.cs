@@ -97,9 +97,9 @@ namespace ybwork.Async.Awaiters
                     continuation?.Invoke();
                     break;
                 case AwaiterState.Aborted:
-                    throw new InvalidOperationException("YueTask已取消");
                 case AwaiterState.Error:
-                    throw new InvalidOperationException("YueTask已发生错误");
+                    // 已取消的Task和已报错的Task忽略回调
+                    return;
                 default:
                     throw new NotImplementedException();
             }
@@ -331,9 +331,9 @@ namespace ybwork.Async.Awaiters
                     continuation?.Invoke(_result);
                     break;
                 case AwaiterState.Aborted:
-                    throw new InvalidOperationException("YueTask已取消");
                 case AwaiterState.Error:
-                    throw new InvalidOperationException("YueTask已发生错误");
+                    // 已取消的Task和已报错的Task忽略回调
+                    return;
                 default:
                     throw new NotImplementedException();
             }
