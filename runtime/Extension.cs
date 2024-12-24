@@ -9,7 +9,8 @@ namespace ybwork.Async
     {
         public static IAwaiterVoid GetAwaiter(this AsyncOperation operation)
         {
-            YueTask task = YueTask.WaitUntil(() => operation.isDone);
+            YueTask task = new YueTask();
+            operation.completed += (_) => task.SetValue();
             return task.GetAwaiter();
         }
     }
