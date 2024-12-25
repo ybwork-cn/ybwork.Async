@@ -120,25 +120,6 @@ namespace ybwork.Async.Awaiters
             State = AwaiterState.Completed;
             Complete();
         }
-
-        [DebuggerHidden]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetResult()
-        {
-            switch (State)
-            {
-                case AwaiterState.Started:
-                    throw new InvalidOperationException("YueTask未完成");
-                case AwaiterState.Completed:
-                    break;
-                case AwaiterState.Aborted:
-                    throw new InvalidOperationException("YueTask已取消");
-                case AwaiterState.Error:
-                    throw new InvalidOperationException("YueTask已发生错误");
-                default:
-                    throw new NotImplementedException();
-            }
-        }
     }
 
     internal class CompletedAwaiter : Awaiter
@@ -288,16 +269,16 @@ namespace ybwork.Async.Awaiters
                     result[i] = item.GetAwaiter().GetResult();
                     i++;
                 }
-                SetValue(result);
+                ((IAwaiter<T[]>)this).SetValue(result);
             }
         }
     }
 
-    internal class Awaiter<T> : AwaiterBase, IAwaiter<T>
+    internal class Awaiter<T> : AwaiterBase, IAwaiter<T>, IAwaiterVoid
     {
         private T _result;
 
-        public T GetResult()
+        T IAwaiter<T>.GetResult()
         {
             return State switch
             {
@@ -311,11 +292,17 @@ namespace ybwork.Async.Awaiters
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetValue(T result)
+        void IAwaiter<T>.SetValue(T result)
         {
             _result = result;
             State = AwaiterState.Completed;
             Complete();
+        }
+
+        [Obsolete]
+        void IAwaiterVoid.SetValue()
+        {
+            throw new InvalidOperationException();
         }
 
         [DebuggerHidden]
