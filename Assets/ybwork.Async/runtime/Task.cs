@@ -211,7 +211,7 @@ namespace ybwork.Async
             if (_awaiter is not Awaiter<T> awaiter)
                 throw new InvalidCastException($"当前YueTask的Awaiter不为{typeof(IAwaiter<T>).Name}");
 
-            awaiter.SetValue(result);
+            ((IAwaiter<T>)awaiter).SetValue(result);
         }
 
         /// <summary>
