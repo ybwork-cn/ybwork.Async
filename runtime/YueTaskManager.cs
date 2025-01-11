@@ -39,7 +39,9 @@ namespace ybwork.Async
 
         internal static void AddTaskAwaiter(IAwaiter taskAwaiter)
         {
-            if (Instance != null)
+            if (!Application.isPlaying)
+                taskAwaiter.Cancel();
+            else
                 Instance._testAwaiters.Enqueue(taskAwaiter);
         }
 
