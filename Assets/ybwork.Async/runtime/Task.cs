@@ -97,6 +97,17 @@ namespace ybwork.Async
             return await func.Invoke();
         }
 
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async YueTask<TResult> ContinueWith<TResult>(Func<TResult> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            await this;
+            return func.Invoke();
+        }
+
         public static YueTask CompletedTask = new YueTask(new CompletedAwaiter());
 
         [DebuggerHidden]
@@ -239,18 +250,6 @@ namespace ybwork.Async
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public async YueTask<T> ContinueWith(Func<T, YueTask<T>> func)
-        {
-            if (func is null)
-                throw new ArgumentNullException(nameof(func));
-
-            T value = await this;
-            T result = await func.Invoke(value);
-            return result;
-        }
-
-        [DebuggerHidden]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async YueTask ContinueWith(Func<T, YueTask> func)
         {
             if (func is null)
@@ -262,6 +261,18 @@ namespace ybwork.Async
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async YueTask ContinueWith(Action<T> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            T value = await this;
+            func.Invoke(value);
+            return;
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async YueTask<TResult> ContinueWith<TResult>(Func<T, YueTask<TResult>> func)
         {
             if (func is null)
@@ -269,6 +280,17 @@ namespace ybwork.Async
 
             T value = await this;
             return await func.Invoke(value);
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async YueTask<TResult> ContinueWith<TResult>(Func<T, TResult> func)
+        {
+            if (func is null)
+                throw new ArgumentNullException(nameof(func));
+
+            T value = await this;
+            return func.Invoke(value);
         }
 
         public T GetResult() => GetAwaiter().GetResult();
