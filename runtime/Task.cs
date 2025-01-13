@@ -101,6 +101,15 @@ namespace ybwork.Async
 
         [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static YueTask<T> FromResult<T>(T value)
+        {
+            YueTask<T> task = new YueTask<T>();
+            task.SetValue(value);
+            return task;
+        }
+
+        [DebuggerHidden]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask WaitAny(params YueTask[] tasks)
         {
             YueTask result = new YueTask(new MutiAwaiter(tasks, MutiAwaiter.WaiteType.WaitAny));
