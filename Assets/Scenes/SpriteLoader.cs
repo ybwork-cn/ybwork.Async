@@ -1,10 +1,10 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Networking;
 using ybwork.Async;
 
 public static class SpriteLoader
 {
-    private static async YueTask<Texture2D> LoadTextrueFromUrl(string url)
+    private static async YueTask<Texture2D> LoadTextrueFromUrlAsync(string url)
     {
         if (string.IsNullOrEmpty(url))
             return null;
@@ -24,12 +24,12 @@ public static class SpriteLoader
         }
     }
 
-    public static async YueTask<Sprite> LoadSpriteFromUrl(string url)
+    public static async YueTask<Sprite> LoadSpriteFromUrlAsync(string url)
     {
         if (string.IsNullOrEmpty(url))
             return null;
 
-        Texture2D tex = await LoadTextrueFromUrl(url);
+        Texture2D tex = await LoadTextrueFromUrlAsync(url);
         if (tex == null)
             return null;
 

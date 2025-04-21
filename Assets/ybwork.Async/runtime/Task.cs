@@ -1,4 +1,4 @@
-﻿// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
+// Changed by 月北(ybwork-cn) https://github.com/ybwork-cn/
 
 using System;
 using System.Collections.Generic;
@@ -8,6 +8,7 @@ using ybwork.Async.Awaiters;
 
 namespace ybwork.Async
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "YBT011:异步方法名应有Async后缀", Justification = "<挂起>")]
     [AsyncMethodBuilder(typeof(YueTaskMethodBuilder))]  //允许YueTask<>作为异步函数的返回值
     public class YueTask
     {
@@ -75,7 +76,6 @@ namespace ybwork.Async
         /// 多次注册不保证触发顺序固定
         /// </summary>
         /// <param name="source"></param>
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async YueTask ContinueWith(Func<YueTask> func)
         {
@@ -86,7 +86,6 @@ namespace ybwork.Async
             await func.Invoke();
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async YueTask<TResult> ContinueWith<TResult>(Func<YueTask<TResult>> func)
         {
@@ -97,7 +96,6 @@ namespace ybwork.Async
             return await func.Invoke();
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async YueTask<TResult> ContinueWith<TResult>(Func<TResult> func)
         {
@@ -110,7 +108,6 @@ namespace ybwork.Async
 
         public static YueTask CompletedTask = new YueTask(new CompletedAwaiter());
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask<T> FromResult<T>(T value)
         {
@@ -119,7 +116,6 @@ namespace ybwork.Async
             return task;
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask WaitAny(params YueTask[] tasks)
         {
@@ -127,14 +123,12 @@ namespace ybwork.Async
             return result;
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask WaitAll(params YueTask[] tasks)
         {
             return WaitAll((IReadOnlyCollection<YueTask>)tasks);
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask WaitAll(IReadOnlyCollection<YueTask> tasks)
         {
@@ -142,14 +136,12 @@ namespace ybwork.Async
             return result;
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask<T[]> WaitAll<T>(params YueTask<T>[] tasks)
         {
             return WaitAll((IReadOnlyCollection<YueTask<T>>)tasks);
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static YueTask<T[]> WaitAll<T>(IReadOnlyCollection<YueTask<T>> tasks)
         {
@@ -190,6 +182,7 @@ namespace ybwork.Async
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "YBT011:异步方法名应有Async后缀", Justification = "<挂起>")]
     [AsyncMethodBuilder(typeof(YueTaskMethodBuilder<>))]  //允许ybwork.Async.Task<>作为异步函数的返回值
     public class YueTask<T> : YueTask
     {
@@ -216,15 +209,12 @@ namespace ybwork.Async
             };
         }
 
-        [DebuggerHidden]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [Obsolete]
         public new void SetValue()
         {
             base.SetValue();
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(T result)
         {
@@ -238,7 +228,6 @@ namespace ybwork.Async
         /// 多次注册不保证触发顺序固定
         /// </summary>
         /// <param name="action"></param>
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Then(Action<T> action)
         {
@@ -248,7 +237,6 @@ namespace ybwork.Async
             awaiter.OnCompleted(action);
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async YueTask ContinueWith(Func<T, YueTask> func)
         {
@@ -259,7 +247,6 @@ namespace ybwork.Async
             await func.Invoke(value);
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async YueTask ContinueWith(Action<T> func)
         {
@@ -271,7 +258,6 @@ namespace ybwork.Async
             return;
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async YueTask<TResult> ContinueWith<TResult>(Func<T, YueTask<TResult>> func)
         {
@@ -282,7 +268,6 @@ namespace ybwork.Async
             return await func.Invoke(value);
         }
 
-        [DebuggerHidden]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async YueTask<TResult> ContinueWith<TResult>(Func<T, TResult> func)
         {

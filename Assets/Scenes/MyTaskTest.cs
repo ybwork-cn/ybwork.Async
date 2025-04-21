@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using ybwork.Async;
 
@@ -8,15 +8,15 @@ public class MyTaskTest : MonoBehaviour
 
     private void Start()
     {
-        YueTask.Run(Test);
+        YueTask.Run(TestAsync);
     }
 
-    private async YueTask Test()
+    private async YueTask TestAsync()
     {
         Log("0");
         await YueTask.CompletedTask;
         Log("1");
-        var delay = YueTask.Delay(1);
+        YueTask delay = YueTask.Delay(1);
         delay.Cancel();
         delay.Then(() =>
         {
@@ -24,24 +24,24 @@ public class MyTaskTest : MonoBehaviour
         });
         Log("3");
         await delay;
-        YueTask<int> yueTask = Test1();
+        YueTask<int> yueTask = Test1Async();
         //yueTask.Cancel();
         int v1 = await yueTask;
         Log(v1);
-        bool v2 = await Test2();
+        bool v2 = await Test2Async();
         Log(v2);
     }
 
-    private async YueTask<int> Test1()
+    private async YueTask<int> Test1Async()
     {
         string url = "https://img-home.csdnimg.cn/images/20201124032511.png";
-        Sprite sprite = await SpriteLoader.LoadSpriteFromUrl(url);
+        Sprite sprite = await SpriteLoader.LoadSpriteFromUrlAsync(url);
         _image.sprite = sprite;
         _image.rectTransform.sizeDelta = new Vector2(sprite.texture.width, sprite.texture.height);
         return 2;
     }
 
-    private YueTask<bool> Test2()
+    private YueTask<bool> Test2Async()
     {
         YueTask<bool> task = new YueTask<bool>();
         task.SetValue(true);
